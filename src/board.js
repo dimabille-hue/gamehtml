@@ -4,6 +4,7 @@
   let state = {
     svgBoard: null,
     tiles: [],
+    tileMap: {},
     tileClickCb: null
   };
 
@@ -39,7 +40,12 @@
     txt.setAttribute('dominant-baseline','central');
     txt.textContent = `${q},${r}`;
 
-    return { poly, txt };
+    const group = document.createElementNS(svgNS,'g');
+    group.setAttribute('data-coord', q+','+r);
+    group.appendChild(poly);
+    group.appendChild(txt);
+
+    return { q, r, group, poly, txt };
   }
 
   function generateHexGrid(cols, rows, size, settings){
@@ -60,10 +66,12 @@
     group.setAttribute('id','ls-hexes');
 
     const tiles = [];
+    const tileMap = {};
 
     function onTileClick(e){
       const node = e.currentTarget;
-      const coord = node.dataset.coord;
+      const coord = node.dataset.coord || node.parentNode && node.parentNode.dataset && node.parentNode.dataset.coord;
+      console.log('Tile click', coord);
       // trigger public callback if any
       if(state.tileClickCb) state.tileClickCb(coord, node);
 
@@ -85,20 +93,21 @@
         const cx = q * horiz + ((r%2) ? horiz/2 : 0) + size;
         const cy = r * vert + size;
         const t = createTile(q,r,size,cx,cy,onTileClick,settings);
-        group.appendChild(t.poly);
-        group.appendChild(t.txt);
-        tiles.push({ q, r, poly: t.poly, txt: t.txt });
+        group.appendChild(t.group);
+        tiles.push({ q: t.q, r: t.r, poly: t.poly, txt: t.txt, group: t.group, unitEl: null });
+        tileMap[`${t.q},${t.r}`] = tiles[tiles.length-1];
       }
     }
 
     svg.appendChild(group);
     state.tiles = tiles;
+    state.tileMap = tileMap;
     state.svgBoard = svg;
     return svg;
   }
 
   function rebuild(cols, rows, size, targetSelector){
-    const target = document.querySelector(targetSelector || '.board-svg-wrap') || document.body;
+    const target = document.querySelector(targetSelector || '.board-svg-wrap') || document.getElementById('board-root') || document.body;
     const prev = document.getElementById('ls-board');
     if(prev && prev.parentNode) prev.parentNode.removeChild(prev);
     const settings = (G.State && typeof G.State.settings === 'function') ? G.State.settings() : {};
@@ -147,9 +156,55 @@
     return bound;
   }
 
+  function clearUnitsRender(){
+    Object.values(state.tileMap).forEach(t => {
+      if(t.unitEl && t.unitEl.parentNode) t.unitEl.parentNode.removeChild(t.unitEl);
+      t.unitEl = null;
+    });
+  }
+
+  function renderUnits(units){
+    // units: array of { id, owner, coord, hp }
+    if(!state.tileMap) return;
+    clearUnitsRender();
+    units = units || [];
+    units.forEach(u => {
+      const t = state.tileMap[u.coord];
+      if(!t) return;
+      const g = document.createElementNS(svgNS, 'g');
+      g.classList.add('unit');
+      // position center: find centroid of polygon points
+      // simpler: reuse text coords
+      const x = parseFloat(t.txt.getAttribute('x')) || 0;
+      const y = parseFloat(t.txt.getAttribute('y')) || 0;
+
+      const circle = document.createElementNS(svgNS, 'circle');
+      circle.setAttribute('cx', x);
+      circle.setAttribute('cy', y - 10);
+      circle.setAttribute('r', 8);
+      circle.setAttribute('fill', u.owner === 'player' ? '#5eead4' : '#f0a868');
+      circle.setAttribute('stroke', '#222');
+      circle.setAttribute('stroke-width','1');
+
+      const label = document.createElementNS(svgNS, 'text');
+      label.setAttribute('x', x);
+      label.setAttribute('y', y - 6);
+      label.setAttribute('fill', '#041224');
+      label.setAttribute('font-size', '8');
+      label.setAttribute('text-anchor','middle');
+      label.setAttribute('dominant-baseline','central');
+      label.textContent = u.hp;
+
+      g.appendChild(circle);
+      g.appendChild(label);
+      t.group.appendChild(g);
+      t.unitEl = g;
+    });
+  }
+
   function highlightTile(coord, opts){
     if(!coord) return;
-    const node = state.tiles.find(t => `${t.q},${t.r}` === coord);
+    const node = state.tileMap[coord];
     if(node){
       node.poly.setAttribute('stroke', (opts && opts.color) || '#22d3ee');
       node.poly.setAttribute('stroke-width', '2');
@@ -170,6 +225,8 @@
     integrateExistingBoard,
     highlightTile,
     onTileClick,
+    renderUnits,
+    clearUnitsRender,
     _internal_state: state
   };
 
