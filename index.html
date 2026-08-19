@@ -4,12 +4,64 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Последний сектор — локальный рендер</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <p>Перенаправление на локальную страницу игры… Если перенаправление не сработало, откройте <a href="./game1_v1_4.html">game1_v1_4.html</a>.</p>
+  <div class="wrapper">
+    <header>
+      <h1>Последний сектор — локальный рендер</h1>
+      <p>Загружаю оригинальную страницу и подготавливаю локальную оболочку...</p>
+    </header>
+
+    <section id="remoteContainer" class="gameframe">
+      <!-- Контент оригинальной страницы будет загружен сюда -->
+    </section>
+
+    <footer>
+      <p>Работать лучше через локальный сервер (python -m http.server)</p>
+    </footer>
+  </div>
+
   <script>
-    // Перенаправляем на локальную страницу с игрой (без iframe).
-    window.location.replace('./game1_v1_4.html');
+    // Загружаем исходный HTML и вставляем тело в контейнер.
+    async function loadRemote(){
+      try{
+        const res = await fetch('game1_v1_4.html');
+        const txt = await res.text();
+        // Извлечём содержимое <body>
+        const bodyMatch = txt.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        const content = bodyMatch ? bodyMatch[1] : txt;
+        const container = document.getElementById('remoteContainer');
+        container.innerHTML = content;
+
+        // Подключаем наш game.js (уже вынесённый)
+        const s = document.createElement('script');
+        s.src = 'game.js';
+        s.defer = true;
+        document.body.appendChild(s);
+
+        // Обработаем внутренние inline <script> теги из оригинала — осторожно: выполняем их в порядке появления
+        const inlineScripts = content.match(/<script[^>]*>([\s\S]*?)<\/script>/ig) || [];
+        for(const scriptTag of inlineScripts){
+          // извлечь код
+          const codeMatch = scriptTag.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+          if(codeMatch && codeMatch[1].trim()){
+            try{
+              // Выполняем код в глобальном контексте
+              (0,eval)(codeMatch[1]);
+            }catch(e){
+              console.warn('Ошибка выполнения inline-скрипта из оригинала', e);
+            }
+          }
+        }
+
+      }catch(e){
+        console.error('Не удалось загрузить game1_v1_4.html:',e);
+        document.getElementById('remoteContainer').textContent = 'Ошибка загрузки оригинальной страницы: ' + e;
+      }
+    }
+
+    loadRemote();
   </script>
 </body>
 </html>
