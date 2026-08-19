@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Последний сектор — локальный рендер</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -23,41 +23,68 @@
   </div>
 
   <script>
-    // Загружаем исходный HTML и вставляем тело в контейнер.
+    // Безопасная загрузка исходного HTML: вставляем тело и последовательно выполняем скрипты
     async function loadRemote(){
       try{
-        const res = await fetch('game1_v1_4.html');
-        const txt = await res.text();
-        // Извлечём содержимое <body>
-        const bodyMatch = txt.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-        const content = bodyMatch ? bodyMatch[1] : txt;
+        const resp = await fetch('game1_v1_4.html');
+        if(!resp.ok) throw new Error('HTTP ' + resp.status);
+        const txt = await resp.text();
+
+        // Используем DOMParser чтобы корректно извлечь <body> и <script>
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(txt, 'text/html');
+        const body = doc.body;
+
+        // Копируем содержимое body в контейнер, но удаляем все <script> перед вставкой
+        const scripts = Array.from(body.querySelectorAll('script'));
+        scripts.forEach(s => s.remove());
+
         const container = document.getElementById('remoteContainer');
-        container.innerHTML = content;
+        container.innerHTML = body.innerHTML;
 
-        // Подключаем наш game.js (уже вынесённый)
-        const s = document.createElement('script');
-        s.src = 'game.js';
-        s.defer = true;
-        document.body.appendChild(s);
+        // Выполняем скрипты последовательно в том порядке, в котором они были в оригинале.
+        // Правило безопасности: НЕ загружаем/выполняем внешние скрипты с других origin.
+        for(const s of scripts){
+          const src = s.getAttribute('src');
+          if(src){
+            // Resolve relative URLs against the fetched document location
+            let resolved;
+            try{ resolved = new URL(src, resp.url); }catch(e){ console.warn('Не удалось разобрать src', src); continue; }
 
-        // Обработаем внутренние inline <script> теги из оригинала — осторожно: выполняем их в порядке появления
-        const inlineScripts = content.match(/<script[^>]*>([\s\S]*?)<\/script>/ig) || [];
-        for(const scriptTag of inlineScripts){
-          // извлечь код
-          const codeMatch = scriptTag.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
-          if(codeMatch && codeMatch[1].trim()){
-            try{
-              // Выполняем код в глобальном контексте
-              (0,eval)(codeMatch[1]);
-            }catch(e){
-              console.warn('Ошибка выполнения inline-скрипта из оригинала', e);
+            if(resolved.origin !== location.origin){
+              console.warn('Пропускаю внешний скрипт с другим origin:', resolved.href);
+              continue;
             }
+
+            // создаём элемент script с атрибутом src — подключаем и ждём загрузки
+            await new Promise((resolve, reject)=>{
+              const el = document.createElement('script');
+              el.src = resolved.pathname + resolved.search + resolved.hash; // keep relative path
+              el.onload = resolve;
+              el.onerror = ()=>{ console.warn('Ошибка загрузки скрипта', el.src); resolve(); };
+              document.body.appendChild(el);
+            });
+
+          } else {
+            // inline script — создаём элемент и вставляем текст, чтобы он выполнился в глобальном контексте
+            const code = s.textContent || s.innerText || '';
+            if(!code.trim()) continue;
+            const el = document.createElement('script');
+            el.textContent = code;
+            document.body.appendChild(el);
           }
         }
 
+        // Подключаем наш модульный скрипт в самом конце
+        const moduleScript = document.createElement('script');
+        moduleScript.src = 'game.js';
+        moduleScript.defer = true;
+        document.body.appendChild(moduleScript);
+
       }catch(e){
-        console.error('Не удалось загрузить game1_v1_4.html:',e);
-        document.getElementById('remoteContainer').textContent = 'Ошибка загрузки оригинальной страницы: ' + e;
+        console.error('Не удалось загрузить game1_v1_4.html:', e);
+        const container = document.getElementById('remoteContainer');
+        container.textContent = 'Ошибка загрузки оригинальной страницы: ' + e;
       }
     }
 
