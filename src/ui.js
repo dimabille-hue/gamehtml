@@ -5,7 +5,7 @@
 
     const container = document.createElement('div');
     container.id = 'ls-ui-controls';
-    container.style.cssText = 'position:fixed;left:12px;top:12px;z-index:1300;display:flex;gap:8px;';
+    container.style.cssText = 'position:fixed;left:12px;top:12px;z-index:1300;display:flex;gap:8px;flex-wrap:wrap;';
 
     const btnSettings = document.createElement('button');
     btnSettings.textContent = 'Настройки';
@@ -42,11 +42,17 @@
     btnKb.className = 'ghost';
     btnKb.onclick = toggleKeyboardBlocking;
 
+    const btnSpawn = document.createElement('button');
+    btnSpawn.textContent = 'Спавн юнита';
+    btnSpawn.className = 'ghost';
+    btnSpawn.onclick = openSpawnModal;
+
     container.appendChild(btnSettings);
     container.appendChild(btnEndTurn);
     container.appendChild(btnBuyFuel);
     container.appendChild(btnIntegrate);
     container.appendChild(btnKb);
+    container.appendChild(btnSpawn);
 
     document.body.appendChild(container);
 
@@ -144,6 +150,47 @@
 
       updateBalanceUI();
       modal.remove();
+    };
+  }
+
+  // spawn unit modal
+  function openSpawnModal(){
+    if(document.getElementById('ls-spawn-modal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'ls-spawn-modal';
+    modal.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1400;padding:12px;background:rgba(6,10,18,.98);border:1px solid rgba(80,110,160,.12);min-width:320px;color:#e8ecf5;font-family:Rajdhani, sans-serif;';
+
+    modal.innerHTML = `
+      <h3 style="margin:0 0 8px 0;font-family:Orbitron, sans-serif;">Спавн юнита</h3>
+      <label style="display:block;margin:6px 0">Координаты (q,r): <input id="ls-spawn-coord" type="text" placeholder="3,3" style="width:120px"></label>
+      <label style="display:block;margin:6px 0">Владелец: <select id="ls-spawn-owner"><option value="player">player</option><option value="npc">npc</option></select></label>
+      <label style="display:block;margin:6px 0">HP: <input id="ls-spawn-hp" type="number" min="1" max="999" value="100" style="width:80px"></label>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+        <button id="ls-spawn-cancel" class="ghost">Отмена</button>
+        <button id="ls-spawn-create" class="ghost">Создать</button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.getElementById('ls-spawn-cancel').onclick = ()=>{ modal.remove(); };
+    document.getElementById('ls-spawn-create').onclick = ()=>{
+      const coord = (document.getElementById('ls-spawn-coord').value || '').trim();
+      const owner = document.getElementById('ls-spawn-owner').value;
+      const hp = parseInt(document.getElementById('ls-spawn-hp').value,10) || 100;
+      if(!coord.match(/^\s*-?\d+\s*,\s*-?\d+\s*$/)){
+        alert('Координаты должны быть в формате q,r');
+        return;
+      }
+      if(G.Logic && typeof G.Logic.spawnUnit === 'function'){
+        const unit = G.Logic.spawnUnit(coord, owner, { hp });
+        // render and persist
+        if(G.Board && typeof G.Board.renderUnits === 'function') G.Board.renderUnits(G.Logic.snapshot().units);
+        if(G.Persistence && typeof G.Persistence.persistUnits === 'function') G.Persistence.persistUnits();
+        alert('Юнит создан: ' + JSON.stringify(unit));
+        modal.remove();
+      } else {
+        alert('Logic модуль не доступен');
+      }
     };
   }
 
