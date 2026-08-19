@@ -1,258 +1,360 @@
-// game.js — доработка: добавлен параметрический генератор поля (placeholder), кнопка "Конец хода" и применение настроек
+// game.js — modular game bootstrap continued
+// Added helpers to integrate existing inline SVG (#board) and to disable keyboard controls
 
-const STORAGE_KEY = 'gamehtml.settings.v1';
-
-const defaultSettings = {
-  sessionMinutes: 5,
-  gridWidth: 9,
-  gridHeight: 9,
-  animations: true,
-  fontSize: 14,
-  balance: 0,
-  fuelPrice: 1000
-};
-
-let settings = loadSettings();
-let state = {
-  balance: 0
-};
-
-function loadSettings(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) return Object.assign({}, defaultSettings, JSON.parse(raw));
-  }catch(e){console.warn('Ошибка чтения настроек',e)}
-  return Object.assign({}, defaultSettings);
-}
-
-function saveSettings(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  }catch(e){console.warn('Ошибка сохранения настроек',e)}
-}
-
-function init(){
-  // Инициализация состояния
-  state.balance = settings.balance || 0;
-
-  // UI: кнопка настроек
-  const btn = document.createElement('button');
-  btn.className = 'settings-btn';
-  btn.textContent = 'Настройки';
-  btn.addEventListener('click', ()=>openSettings());
-  document.body.appendChild(btn);
-
-  // баланс
-  const bal = document.createElement('div');
-  bal.className = 'balance-indicator';
-  bal.id = 'balanceIndicator';
-  updateBalanceUI();
-  document.body.appendChild(bal);
-
-  // Кнопка "Конец хода"
-  createEndTurnButton();
-
-  // Модальное окно настроек
-  buildSettingsModal();
-
-  // Первичная генерация поля
-  applySettings();
-}
-
-function updateBalanceUI(){
-  const el = document.getElementById('balanceIndicator');
-  if(!el) return;
-  el.textContent = `Баланс: ${state.balance} (Цена топлива: ${settings.fuelPrice})`;
-}
-
-function openSettings(){
-  const modal = document.querySelector('.settings-modal');
-  if(!modal) return;
-  modal.classList.add('open');
-}
-
-function closeSettings(){
-  const modal = document.querySelector('.settings-modal');
-  if(!modal) return;
-  modal.classList.remove('open');
-}
-
-function buildSettingsModal(){
-  // если уже добавлен — не дублируем
-  if(document.querySelector('.settings-modal')) return;
-
-  const modal = document.createElement('div');
-  modal.className = 'settings-modal';
-
-  const title = document.createElement('h3');
-  title.textContent = 'Настройки игры';
-  modal.appendChild(title);
-
-  // sessionMinutes
-  modal.appendChild(renderNumberSetting('Время сессии (мин)', 'sessionMinutes', settings.sessionMinutes));
-  modal.appendChild(renderNumberSetting('Ширина сетки', 'gridWidth', settings.gridWidth, 9));
-  modal.appendChild(renderNumberSetting('Высота сетки', 'gridHeight', settings.gridHeight, 9));
-  modal.appendChild(renderNumberSetting('Размер шрифта (px)', 'fontSize', settings.fontSize, 10));
-
-  // анимации
-  const animRow = document.createElement('div');
-  animRow.className = 'settings-row';
-  const animLabel = document.createElement('label');
-  animLabel.textContent = 'Анимации';
-  animRow.appendChild(animLabel);
-  const animSel = document.createElement('select');
-  animSel.innerHTML = `<option value="true">Вкл</option><option value="false">Выкл</option>`;
-  animSel.value = String(settings.animations);
-  animSel.addEventListener('change', ()=>{
-    settings.animations = (animSel.value === 'true');
-    saveSettings();
-  });
-  animRow.appendChild(animSel);
-  modal.appendChild(animRow);
-
-  // actions
-  const actions = document.createElement('div');
-  actions.className = 'settings-actions';
-  const btnSave = document.createElement('button');
-  btnSave.textContent = 'Сохранить';
-  btnSave.addEventListener('click', ()=>{
-    // прочитать inputs
-    const nms = modal.querySelectorAll('[data-setting]');
-    nms.forEach(n => {
-      const key = n.getAttribute('data-setting');
-      let val = Number(n.value);
-      if(!isNaN(val)) settings[key] = val;
-    });
-    saveSettings();
-    closeSettings();
-    applySettings();
-    alert('Настройки сохранены и применены.');
-  });
-  const btnClose = document.createElement('button');
-  btnClose.textContent = 'Закрыть';
-  btnClose.addEventListener('click', ()=>closeSettings());
-  actions.appendChild(btnClose);
-  actions.appendChild(btnSave);
-  modal.appendChild(actions);
-
-  document.body.appendChild(modal);
-}
-
-function renderNumberSetting(labelText, key, value, min=0){
-  const row = document.createElement('div');
-  row.className = 'settings-row';
-  const label = document.createElement('label');
-  label.textContent = labelText;
-  row.appendChild(label);
-  const input = document.createElement('input');
-  input.type = 'number';
-  input.min = String(min);
-  input.value = String(value);
-  input.setAttribute('data-setting', key);
-  row.appendChild(input);
-  return row;
-}
-
-// Покупка топлива (используется в следующих шагах) — цена settings.fuelPrice
-function buyFuel(){
-  if(state.balance >= settings.fuelPrice){
-    state.balance -= settings.fuelPrice;
-    updateBalanceUI();
-    return true;
-  }
-  alert('Недостаточно средств для покупки топлива.');
-  return false;
-}
-
-// Кнопка "Конец хода" — простая реализация, генерирует событие 'endTurn'
-function createEndTurnButton(){
-  if(document.getElementById('endTurnBtn')) return;
-  const btn = document.createElement('button');
-  btn.id = 'endTurnBtn';
-  btn.className = 'settings-btn';
-  btn.style.right = 'auto';
-  btn.style.left = '16px';
-  btn.textContent = 'Конец хода';
-  btn.addEventListener('click', ()=>{
-    const ev = new CustomEvent('endTurn');
-    window.dispatchEvent(ev);
-    // Временная визуальная реакция
-    btn.animate([{transform:'scale(1)'},{transform:'scale(.98)'},{transform:'scale(1)'}],{duration:180});
-  });
-  document.body.appendChild(btn);
-}
-
-// Генератор поля (placeholder) — создаёт SVG-пример сетки и помещает в #game-root.
-// Этот генератор параметрический и не изменяет игровую логику — он даёт тестовый визуальный каркас.
-function generateGrid(width, height){
-  width = Math.max(9, Math.floor(width));
-  height = Math.max(9, Math.floor(height));
-
-  let root = document.getElementById('game-root');
-  if(!root){
-    // Если нет, создадим контейнер в body
-    root = document.createElement('div');
-    root.id = 'game-root';
-    root.style.padding = '12px';
-    document.body.appendChild(root);
-  }
-  // Очищаем старое
-  root.innerHTML = '';
-
-  const info = document.createElement('div');
-  info.style.marginBottom = '8px';
-  info.style.color = '#9fb7d6';
-  info.textContent = `Сетка: ${width} × ${height} (placeholder)`;
-  root.appendChild(info);
-
-  // Простая таблица как placeholder (реальный перенос SVG/логики позже)
-  const table = document.createElement('table');
-  table.style.borderCollapse = 'collapse';
-  table.style.width = '100%';
-  const cellSize = Math.max(20, Math.floor(480 / Math.max(width, height)));
-
-  for(let r=0;r<height;r++){
-    const tr = document.createElement('tr');
-    for(let c=0;c<width;c++){
-      const td = document.createElement('td');
-      td.style.width = cellSize + 'px';
-      td.style.height = cellSize + 'px';
-      td.style.border = '1px solid rgba(255,255,255,.04)';
-      td.style.background = ( (r+c)%2 === 0 ) ? 'rgba(94,234,212,.03)' : 'transparent';
-      td.dataset.r = r;
-      td.dataset.c = c;
-      td.addEventListener('click', ()=>{
-        // placeholder click handler: отмечаем выделение
-        td.style.outline = '2px solid rgba(94,234,212,.35)';
-        setTimeout(()=>td.style.outline = '', 400);
-      });
-      tr.appendChild(td);
-    }
-    table.appendChild(tr);
-  }
-  root.appendChild(table);
-
-  // Сигнал о том, что поле создано
-  window.dispatchEvent(new CustomEvent('gridGenerated', {detail:{width,height}}));
-}
-
-function applySettings(){
-  // Применяем настройки к видимым элементам
-  document.documentElement.style.fontSize = settings.fontSize + 'px';
-  // Перегенерируем поле
-  generateGrid(settings.gridWidth, settings.gridHeight);
-  // Обновим баланс UI
-  updateBalanceUI();
-}
-
-// Инициализация
-window.addEventListener('DOMContentLoaded', ()=>{
-  init();
-});
-
-// API: экспортируем в глобальную область для дальнейшей интеграции
 window.GAME = window.GAME || {};
-window.GAME.settings = settings;
-window.GAME.saveSettings = saveSettings;
-window.GAME.generateGrid = generateGrid;
-window.GAME.buyFuel = buyFuel;
+
+(function(global){
+  const STORAGE_KEY = 'lastsector:settings:v1';
+
+  const defaults = {
+    gridWidth: 11,
+    gridHeight: 9,
+    fontSize: 14,
+    animations: true,
+    sessionMinutes: 5,
+    fuelPrice: 1000,
+    balance: 0
+  };
+
+  function loadSettings(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return Object.assign({}, defaults);
+      const parsed = JSON.parse(raw);
+      return Object.assign({}, defaults, parsed);
+    }catch(e){
+      console.warn('Ошибка загрузки настроек, используем defaults', e);
+      return Object.assign({}, defaults);
+    }
+  }
+
+  function saveSettings(s){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  }
+
+  const state = {
+    settings: loadSettings(),
+    svgBoard: null,
+    tiles: [],
+    keyboardDisabled: false,
+    keyboardBlocker: null
+  };
+
+  // UI helpers
+  function createControls(){
+    const container = document.querySelector('#remoteContainer') || document.body;
+    if(document.getElementById('ls-controls')) return;
+
+    const controls = document.createElement('div');
+    controls.id = 'ls-controls';
+    controls.style.cssText = 'position:fixed;left:12px;top:12px;z-index:1200;display:flex;gap:8px;';
+
+    const settingsBtn = document.createElement('button');
+    settingsBtn.textContent = 'Настройки';
+    settingsBtn.className = 'ghost';
+    settingsBtn.onclick = openSettings;
+
+    const endTurnBtn = document.createElement('button');
+    endTurnBtn.textContent = 'Конец хода';
+    endTurnBtn.className = 'ghost';
+    endTurnBtn.onclick = ()=>{
+      const ev = new CustomEvent('endTurn', { detail: { ts: Date.now() } });
+      window.dispatchEvent(ev);
+      console.info('Сгенерировано событие endTurn');
+    };
+
+    const buyFuelBtn = document.createElement('button');
+    buyFuelBtn.id = 'ls-buyFuel';
+    buyFuelBtn.textContent = 'Купить топливо (' + state.settings.fuelPrice + ')';
+    buyFuelBtn.className = 'ghost';
+    buyFuelBtn.onclick = ()=>{
+      const ok = buyFuel();
+      if(ok) alert('Топливо куплено');
+      else alert('Недостаточно средств');
+    };
+
+    const integrateBtn = document.createElement('button');
+    integrateBtn.textContent = 'Интегрировать Board';
+    integrateBtn.className = 'ghost';
+    integrateBtn.onclick = ()=>{ integrateExistingBoard(); };
+
+    const disableKbBtn = document.createElement('button');
+    disableKbBtn.textContent = 'Откл. клавиатуру';
+    disableKbBtn.className = 'ghost';
+    disableKbBtn.onclick = ()=>{ toggleKeyboardBlocking(); };
+
+    controls.appendChild(settingsBtn);
+    controls.appendChild(endTurnBtn);
+    controls.appendChild(buyFuelBtn);
+    controls.appendChild(integrateBtn);
+    controls.appendChild(disableKbBtn);
+    document.body.appendChild(controls);
+  }
+
+  // settings modal
+  function openSettings(){
+    if(document.getElementById('ls-settings')) return;
+    const modal = document.createElement('div');
+    modal.id = 'ls-settings';
+    modal.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1300;padding:14px;background:rgba(8,12,20,.98);border:1px solid rgba(100,140,200,.12);box-shadow:0 8px 30px rgba(0,0,0,.6);min-width:320px;color:#e8ecf5;font-family:Rajdhani, sans-serif;';
+
+    modal.innerHTML = `
+      <h3 style="margin:0 0 8px 0;font-family:Orbitron, sans-serif;">Настройки</h3>
+      <label>Ширина поля: <input id="ls-gridWidth" type="number" min="7" max="40"></label><br>
+      <label>Высота поля: <input id="ls-gridHeight" type="number" min="5" max="30"></label><br>
+      <label>Размер шрифта: <input id="ls-fontSize" type="number" min="10" max="24"></label><br>
+      <label><input id="ls-animations" type="checkbox"> Анимации</label><br><br>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+        <button id="ls-save" class="ghost">Сохранить</button>
+        <button id="ls-close" class="ghost">Закрыть</button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('ls-gridWidth').value = state.settings.gridWidth;
+    document.getElementById('ls-gridHeight').value = state.settings.gridHeight;
+    document.getElementById('ls-fontSize').value = state.settings.fontSize;
+    document.getElementById('ls-animations').checked = state.settings.animations;
+
+    document.getElementById('ls-close').onclick = ()=>{ modal.remove(); };
+    document.getElementById('ls-save').onclick = ()=>{
+      const w = Math.max(7, parseInt(document.getElementById('ls-gridWidth').value,10) || defaults.gridWidth);
+      const h = Math.max(5, parseInt(document.getElementById('ls-gridHeight').value,10) || defaults.gridHeight);
+      state.settings.gridWidth = w;
+      state.settings.gridHeight = h;
+      state.settings.fontSize = parseInt(document.getElementById('ls-fontSize').value,10) || defaults.fontSize;
+      state.settings.animations = !!document.getElementById('ls-animations').checked;
+      saveSettings(state.settings);
+      modal.remove();
+      rebuildBoard();
+    };
+  }
+
+  // simple buyFuel
+  function buyFuel(){
+    if(state.settings.balance >= state.settings.fuelPrice){
+      state.settings.balance -= state.settings.fuelPrice;
+      saveSettings(state.settings);
+      updateBalanceUI();
+      return true;
+    }
+    return false;
+  }
+
+  function updateBalanceUI(){
+    let el = document.getElementById('ls-balance');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'ls-balance';
+      el.style.cssText = 'position:fixed;right:12px;top:12px;z-index:1200;color:var(--star);font-family:JetBrains Mono, monospace;background:rgba(255,255,255,.02);padding:6px;border:1px solid rgba(30,50,80,.25);';
+      document.body.appendChild(el);
+    }
+    el.textContent = 'Баланс: ' + state.settings.balance;
+  }
+
+  // hex geometry helpers
+  function hexPolygonPath(cx, cy, size){
+    const points = [];
+    for(let i=0;i<6;i++){
+      const angle = Math.PI/180 * (60 * i - 30); // pointy-top
+      const x = cx + size * Math.cos(angle);
+      const y = cy + size * Math.sin(angle);
+      points.push(x + ',' + y);
+    }
+    return points.join(' ');
+  }
+
+  // board generation — SVG hex grid
+  function generateHexGrid(cols, rows, size){
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const hexW = size * 2;
+    const hexH = Math.sqrt(3) * size;
+    const horiz = size * 1.5; // horizontal distance between hex centers
+    const vert = hexH; // vertical distance
+
+    const width = Math.ceil((cols + 0.5) * horiz + size);
+    const height = Math.ceil(rows * vert + hexH/2);
+
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('id','ls-board');
+    svg.setAttribute('width','100%');
+    svg.setAttribute('height','100%');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+    const group = document.createElementNS(svgNS, 'g');
+    group.setAttribute('id','ls-hexes');
+
+    state.tiles = [];
+
+    for(let r=0;r<rows;r++){
+      for(let q=0;q<cols;q++){
+        const cx = q * horiz + (r%2 ? horiz/2 : 0) + size;
+        const cy = r * (hexH * 0.75) + size;
+
+        // create polygon
+        const poly = document.createElementNS(svgNS, 'polygon');
+        const pts = hexPolygonPath(cx, cy, size);
+        poly.setAttribute('points', pts);
+        poly.setAttribute('fill', '#0b1322');
+        poly.setAttribute('stroke', '#182641');
+        poly.setAttribute('stroke-width', '1');
+        poly.classList.add('ls-hex');
+        poly.dataset.coord = q+','+r;
+        poly.style.cursor = 'pointer';
+        poly.addEventListener('click', onTileClick);
+        group.appendChild(poly);
+
+        // label
+        const txt = document.createElementNS(svgNS, 'text');
+        txt.setAttribute('x', cx);
+        txt.setAttribute('y', cy + 2);
+        txt.setAttribute('fill', '#7891b8');
+        txt.setAttribute('font-size', Math.max(10, Math.min(14, state.settings.fontSize-2)));
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('dominant-baseline','central');
+        txt.textContent = `${q},${r}`;
+        group.appendChild(txt);
+
+        state.tiles.push({q,r,poly,txt});
+      }
+    }
+
+    svg.appendChild(group);
+    return svg;
+  }
+
+  function onTileClick(e){
+    const node = e.currentTarget;
+    const coord = node.dataset.coord;
+    console.log('Tile click', coord);
+    node.setAttribute('fill','#101d31');
+    node.setAttribute('stroke', state.settings.animations ? '#22d3ee' : '#245f62');
+    node.setAttribute('stroke-width', '2');
+    setTimeout(()=>{
+      node.setAttribute('fill','#0b1322');
+      node.setAttribute('stroke','#182641');
+      node.setAttribute('stroke-width','1');
+    }, 300);
+  }
+
+  function rebuildBoard(){
+    const target = document.querySelector('.board-svg-wrap') || document.getElementById('remoteContainer') || document.body;
+    const prev = document.getElementById('ls-board');
+    if(prev && prev.parentNode) prev.parentNode.removeChild(prev);
+
+    const size = 18; // hex radius
+    const svg = generateHexGrid(state.settings.gridWidth, state.settings.gridHeight, size);
+
+    if(target === document.getElementById('remoteContainer')){
+      svg.style.width = '100%';
+      svg.style.height = 'min(70vh, 600px)';
+    }
+    target.appendChild(svg);
+    state.svgBoard = svg;
+  }
+
+  // Integration: bind to existing original SVG#board if present
+  function integrateExistingBoard(){
+    const orig = document.getElementById('board');
+    if(!orig){
+      console.warn('Оригинальный SVG #board не найден в DOM.');
+      alert('Оригинальный SVG #board не найден в DOM. Убедитесь, что страница загружена.');
+      return;
+    }
+
+    // Find hex polygons by class or by <g id="tiles"> pattern
+    const hexes = orig.querySelectorAll('.hex, .hex-fog, polygon, path');
+    if(!hexes || hexes.length === 0){
+      console.warn('Не найдено очевидных hex-элементов внутри #board.');
+      alert('Не найдено hex-элементов внутри #board.');
+      return;
+    }
+
+    // Attach click handlers to shapes that look like tiles
+    let bound = 0;
+    hexes.forEach(node => {
+      // skip if already bound
+      if(node.dataset.lsbound) return;
+      node.style.cursor = 'pointer';
+      node.addEventListener('click', function(e){
+        // small highlight animation
+        const prevStroke = node.getAttribute('stroke');
+        node.setAttribute('stroke', '#22d3ee');
+        node.setAttribute('stroke-width', '2');
+        setTimeout(()=>{
+          if(prevStroke) node.setAttribute('stroke', prevStroke);
+          node.setAttribute('stroke-width', '1');
+        }, 300);
+        // dispatch a custom event for higher-level logic
+        const c = node.dataset.coord || node.getAttribute('data-coord') || '';
+        window.dispatchEvent(new CustomEvent('ls:tileClick', { detail: { coord: c, node } }));
+      });
+      node.dataset.lsbound = '1';
+      bound++;
+    });
+
+    console.info('Интеграция оригинального board: привязано', bound, 'элементов');
+    alert('Интеграция оригинального board: привязано ' + bound + ' элементов');
+  }
+
+  // Disable keyboard controls by capturing keydown events at capture phase
+  function toggleKeyboardBlocking(){
+    if(state.keyboardDisabled){
+      // remove blocker
+      if(state.keyboardBlocker){
+        window.removeEventListener('keydown', state.keyboardBlocker, true);
+        state.keyboardBlocker = null;
+      }
+      state.keyboardDisabled = false;
+      alert('Клавиатура включена');
+      return;
+    }
+
+    const blocker = function(e){
+      // Allow certain key combos if desired (e.g., Ctrl+F5) — currently block all
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      return false;
+    };
+
+    window.addEventListener('keydown', blocker, true);
+    state.keyboardBlocker = blocker;
+    state.keyboardDisabled = true;
+    alert('Клавиатура отключена (снятие через кнопку)');
+  }
+
+  // API exposure
+  global.GAME.settings = state.settings;
+  global.GAME.saveSettings = function(){ saveSettings(state.settings); };
+  global.GAME.buyFuel = buyFuel;
+  global.GAME.rebuildBoard = rebuildBoard;
+  global.GAME.setBalance = function(v){ state.settings.balance = v; saveSettings(state.settings); updateBalanceUI(); };
+  global.GAME.integrateExistingBoard = integrateExistingBoard;
+  global.GAME.toggleKeyboardBlocking = toggleKeyboardBlocking;
+
+  // init
+  function init(){
+    createControls();
+    updateBalanceUI();
+    setTimeout(()=>{ rebuildBoard(); }, 120);
+
+    window.addEventListener('endTurn', (e)=>{
+      console.info('Получено endTurn в GAME:', e.detail);
+      state.settings.balance += 500;
+      saveSettings(state.settings);
+      updateBalanceUI();
+    });
+
+    // listen to custom tile click event from integrated board
+    window.addEventListener('ls:tileClick', (e)=>{
+      console.log('ls:tileClick', e.detail);
+      // placeholder: you can hook game logic here
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else init();
+
+})(window.GAME = window.GAME || {});
