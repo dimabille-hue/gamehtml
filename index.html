@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Maze Tile Generator v2</title>
+<title>Maze Tile Generator v2 - with Editor</title>
 <style>
 :root{--bg:#080c10;--panel:#10171e;--panel2:#17212a;--line:#2a3945;--text:#edf3f5;--muted:#91a1ad;--accent:#8ce35b;--warn:#f3b84b;--bad:#f16d75}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 500px at 25% -10%,#20303a 0,#080c10 65%);color:var(--text);font:13px/1.35 Inter,system-ui,Segoe UI,Arial,sans-serif}
@@ -13,44 +13,105 @@ h1{margin:0;font-size:21px}h1 i{font-style:normal;color:var(--accent)}.sub{color
 aside,.right{background:#10171edb;padding:15px;border-right:1px solid var(--line);overflow:auto}.right{border:0;border-left:1px solid var(--line)}
 main{padding:15px;min-width:0;display:flex;flex-direction:column;gap:11px}h2{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#dbe5e9;margin:0 0 9px}
 section{margin-bottom:15px}.card{background:#141e26;border:1px solid #2b3a46;border-radius:8px;padding:10px}
-label{display:block;color:var(--muted);font-size:11px;margin:8px 0 4px}select,input,button{font:inherit;color:var(--text);background:#18242e;border:1px solid #30404c;border-radius:6px;padding:8px 9px;width:100%}button{cursor:pointer}button:hover{filter:brightness(1.15)}button.primary{background:#3c8f2a;border-color:#65b94d;font-weight:700}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:6px}.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.theme{cursor:pointer;padding:6px;border:1px solid #30404c;border-radius:7px;background:#131c23}.theme.active{outline:2px solid var(--accent)}.sw{height:35px;border-radius:4px;margin-bottom:5px}.theme b{font-size:10px}.theme small{display:block;color:var(--muted);font-size:9px}
+label{display:block;color:var(--muted);font-size:11px;margin:8px 0 4px}select,input,button{font:inherit;color:var(--text);background:#18242e;border:1px solid #30404c;border-radius:6px;padding:8px 10px;margin:0}input[type="range"]{padding:0}input[type="color"]{height:36px;width:100%;padding:4px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:6px}.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.theme{cursor:pointer;padding:8px;border-radius:6px;border:2px solid transparent;background:#141e26;text-align:center}.theme.active{border-color:var(--accent);background:#1a2838}.theme b{display:block;font-size:16px}.theme span{display:block;font-size:9px;color:var(--muted)}
 .palette{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}.chip{height:24px;border-radius:4px;border:1px solid #ffffff20}
-.typegrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}.type{padding:3px;background:#131c23;border:1px solid #30404c;border-radius:6px;text-align:center;color:var(--muted);font-size:8px}.type.selected{outline:2px solid var(--accent)}.type canvas{display:block;width:100%;margin-bottom:2px}
-.toolbar{display:flex;gap:6px;align-items:center}.toolbar button{width:auto;padding:7px 10px}.toolbar .grow{flex:1}.badge{padding:5px 8px;border-radius:999px;background:#18251a;color:#9fe27e;font-size:10px}
+.typegrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}.type{padding:3px;background:#131c23;border:1px solid #30404c;border-radius:6px;text-align:center;color:var(--muted);font-size:8px;cursor:pointer}.type.selected{border-color:var(--accent);background:#1a3d22;color:var(--accent)}
+.toolbar{display:flex;gap:6px;align-items:center}.toolbar button{width:auto;padding:7px 10px}.grow{flex:1}.badge{padding:5px 8px;border-radius:999px;background:#18251a;color:#9fe27e;font-size:9px;font-weight:600}
 .stage{position:relative;flex:1;min-height:490px;border:1px solid var(--line);border-radius:9px;background:#05080a;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#map{image-rendering:auto;box-shadow:0 20px 70px #000c;max-width:none}.gridlines{position:absolute;inset:0;pointer-events:none;opacity:.18;background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)}
-.library{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;max-height:150px;overflow:auto}.lib{background:#080d11;border:1px solid #26343d;border-radius:4px;padding:2px}.lib canvas{display:block;width:100%}
-.kv{display:flex;justify-content:space-between;padding:4px 0;color:var(--muted)}.kv strong{color:var(--text)}.check{display:flex;gap:7px;align-items:center;margin:7px 0;color:#d9e2e6}.check input{width:auto}
+#map{image-rendering:auto;box-shadow:0 20px 70px #000c;max-width:none;cursor:crosshair}.gridlines{position:absolute;inset:0;pointer-events:none;opacity:.18;background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:var(--gs) var(--gs)}
+.library{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;max-height:150px;overflow:auto}.lib{background:#080d11;border:1px solid #26343d;border-radius:4px;padding:2px;cursor:pointer;transition:all .2s}.lib.selected{border-color:var(--accent);box-shadow:0 0 8px var(--accent)80}.lib canvas{display:block}
+.kv{display:flex;justify-content:space-between;padding:4px 0;color:var(--muted)}.kv strong{color:var(--text)}.check{display:flex;gap:7px;align-items:center;margin:7px 0;color:#d9e2e6}.check input{cursor:pointer}
 .slider{width:100%;padding:0}.hint{font-size:10px;color:var(--muted)}.ok{color:#96e576}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.editor-panel{background:#0f1419;border:1px solid #2a3945;border-radius:8px;padding:12px;margin-top:10px}
+.socket-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;background:#141e26;padding:10px;border-radius:6px;align-items:center;justify-items:center}
+.socket-btn{width:60px;height:60px;border:2px solid #30404c;background:#18242e;color:var(--text);border-radius:6px;cursor:pointer;font-weight:bold;font-size:14px;transition:all .2s}
+.socket-btn.open{border-color:var(--accent);background:#1a3d22;box-shadow:0 0 8px var(--accent)40}
+.socket-btn:hover{border-color:var(--accent)}.socket-btn:active{transform:scale(.95)}
+.socket-placeholder{width:60px;height:60px}
+.tile-info{background:#141e26;padding:8px;border-radius:6px;font-size:10px;color:var(--muted);line-height:1.6;margin:8px 0}
+.tile-preview{display:flex;gap:10px;margin:10px 0;align-items:center}
+.tile-preview canvas{border:1px solid #30404c;border-radius:4px;background:#05080a}
+.edit-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
+.edit-controls button{padding:8px 10px;font-size:11px}
+.history-btn{padding:6px 10px;font-size:10px}
+.locked{border-color:#f3b84b !important;background:#3d3d00 !important}
+button{cursor:pointer;transition:all .15s}button:hover{background:#1f2d38;border-color:var(--accent)}button:active{transform:scale(.98)}
+.primary{background:var(--accent);color:#000;font-weight:600;border-color:var(--accent)}.primary:hover{background:#9dda6b}.primary:disabled{opacity:.5;cursor:not-allowed}
 footer{height:48px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:8px 15px;color:var(--muted);font-size:10px;background:#0d1318}
+.mode-toggle{display:flex;gap:4px}.mode-toggle button{flex:1;padding:6px 8px;font-size:10px;border:1px solid #30404c;background:#18242e;border-radius:4px}.mode-toggle button.active{background:var(--accent);color:#000;border-color:var(--accent)}
 @media(max-width:1150px){.app{grid-template-columns:250px 1fr}.right{display:none}}@media(max-width:760px){.app{display:block}aside{display:none}main{height:calc(100vh - 124px)}}
 </style>
 </head>
 <body>
 <header>
- <div><h1>Генератор тайлов <i>«Сумасшедший лабиринт»</i> · v2</h1><div class="sub">Topology → Rules → Theme → Decoration → Validation → Export</div></div>
+ <div><h1>Генератор тайлов <i>«Сумасшедший лабиринт»</i> · v2+</h1><div class="sub">Topology → Rules → Theme → Decoration → Validation → Export + TILE EDITOR</div></div>
  <span class="badge" id="health">● READY</span>
 </header>
 <div class="app">
 <aside>
-<section><h2>Тема</h2><div id="themes" class="theme-grid"></div></section>
-<section><h2>Палитра темы</h2><div id="palette" class="palette"></div></section>
-<section><h2>Геометрия</h2><div id="types" class="typegrid"></div></section>
-<section><h2>Поле</h2>
+<section><h2>Режим</h2><div class="mode-toggle"><button class="active" id="modeGen">Генератор</button><button id="modeEdit">Редактор</button></div></section>
+
+<section id="genPanel">
+<h2>Тема</h2><div id="themes" class="theme-grid"></div>
+<h2>Палитра темы</h2><div id="palette" class="palette"></div>
+<h2>Геометрия</h2><div id="types" class="typegrid"></div>
+<h2>Поле</h2>
 <label>Размер</label><select id="gridSize"><option>8</option><option>12</option><option selected>16</option><option>20</option><option>24</option></select>
 <label>Размер тайла</label><select id="tileSize"><option>128</option><option selected>192</option><option>256</option><option>384</option></select>
 <label>Дополнительные петли: <b id="loopV">12%</b></label><input class="slider" id="loops" type="range" min="0" max="40" value="12">
 <label>Плотность декора: <b id="decorV">65%</b></label><input class="slider" id="decor" type="range" min="0" max="100" value="65">
 <label>Seed</label><div class="row"><input id="seed" value="481729"><button id="dice">🎲</button></div>
+<button class="primary" id="generate" style="width:100%;margin-top:10px">СГЕНЕРИРОВАТЬ ПОЛЕ</button>
 </section>
-<section><button class="primary" id="generate">СГЕНЕРИРОВАТЬ ПОЛЕ</button></section>
+
+<section id="editPanel" style="display:none">
+<h2>Редактор тайла</h2>
+<div class="tile-info" id="editInfo">Выберите тайл на поле для редактирования</div>
+<div id="editorControls" style="display:none">
+ <h3 style="margin:10px 0 8px;font-size:11px;text-transform:uppercase;color:#dbe5e9">Сокеты (N/E/S/W)</h3>
+ <div class="socket-grid">
+  <div class="socket-placeholder"></div>
+  <button class="socket-btn" id="sockN" title="North">N</button>
+  <div class="socket-placeholder"></div>
+  <button class="socket-btn" id="sockW" title="West">W</button>
+  <div class="socket-placeholder"></div>
+  <button class="socket-btn" id="sockE" title="East">E</button>
+  <div class="socket-placeholder"></div>
+  <button class="socket-btn" id="sockS" title="South">S</button>
+  <div class="socket-placeholder"></div>
+ </div>
+ 
+ <label style="margin-top:15px">Масштаб декора</label><input class="slider" id="decoScaleEdit" type="range" min="60" max="140" value="100">
+ 
+ <label style="margin-top:10px">Цвет пола</label><input type="color" id="floorColor">
+ <label>Цвет стены</label><input type="color" id="wallColor">
+ 
+ <label style="margin-top:10px;display:flex;gap:8px;align-items:center"><input type="checkbox" id="pinTile"> Зафиксировать тайл</label>
+ <div class="hint" style="margin-top:5px">Зафиксированные тайлы не изменяются при регенерации</div>
+ 
+ <div class="edit-controls" style="margin-top:15px">
+  <button id="resetTile">↻ Сбросить</button>
+  <button id="applyTile">✓ Применить</button>
+ </div>
+ 
+ <div style="margin-top:15px;border-top:1px solid #2a3945;padding-top:10px">
+  <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase">Экспорт тайла</h3>
+  <div class="row"><button id="exportTilePng">📥 PNG</button><button id="exportTileSvg">📥 SVG</button></div>
+ </div>
+</div>
+
+<div style="margin-top:15px;border-top:1px solid #2a3945;padding-top:10px">
+ <h3 style="margin:0 0 8px;font-size:11px;text-transform:uppercase">История</h3>
+ <div class="row"><button class="history-btn" id="undoBtn">↶ Undo</button><button class="history-btn" id="redoBtn">↷ Redo</button></div>
+</div>
+</section>
 </aside>
 
 <main>
-<div class="toolbar"><button id="minus">−</button><button id="plus">+</button><button id="fit">По размеру</button><button id="toggleGrid">Сетка</button><div class="grow"></div><span id="status">Готово</span></div>
+<div class="toolbar"><button id="minus">−</button><button id="plus">+</button><button id="fit">По размеру</button><button id="toggleGrid">Сетка</button><div class="grow"></div><span id="status" style="font-size:10px">Ready</span></div>
 <div class="stage"><canvas id="map"></canvas><div class="gridlines" id="gridlines" hidden></div></div>
-<section><h2>Библиотека · 15 форм × 4 варианта</h2><div id="library" class="library"></div></section>
+<section id="libSection"><h2>Библиотека · 15 форм × 4 варианта</h2><div id="library" class="library"></div></section>
 </main>
 
 <div class="right">
@@ -71,18 +132,22 @@ footer{height:48px;border-top:1px solid var(--line);display:flex;align-items:cen
 <section><h2>Режимы</h2><div class="row3"><button id="regen">↻</button><button id="newSeed">New Seed</button><button id="clear">Очистить</button></div></section>
 </div>
 </div>
-<footer><b>v2 prototype</b><span>Генерация локально в браузере</span><span>•</span><span>Связность гарантируется генератором графа</span><span>•</span><span>Края тайлов симметричны</span></footer>
+<footer><b>v2+ with Editor</b><span>Генерация локально в браузере</span><span>•</span><span>Связность гарантируется генератором графа</span></footer>
 
 <script>
 const T={
- temple:{name:"Древний храм",icon:"🏛",floor:"#d8c99d",floor2:"#b5a576",wall:"#53634b",wall2:"#202f29",accent:"#e6a633",detail:"#71864e",dark:"#131d19"},
- dungeon:{name:"Заброшенное подземелье",icon:"🔥",floor:"#737a7f",floor2:"#4c5358",wall:"#2d3338",wall2:"#10161a",accent:"#ed8c31",detail:"#695d4c",dark:"#0b1013"},
- jungle:{name:"Джунгли",icon:"🌿",floor:"#c9bd84",floor2:"#9d945a",wall:"#35623b",wall2:"#142d1c",accent:"#e7bd42",detail:"#568745",dark:"#0c1b12"},
- space:{name:"Космостанция",icon:"🚀",floor:"#89959d",floor2:"#5b6871",wall:"#293640",wall2:"#0e161d",accent:"#45d7ff",detail:"#687d8a",dark:"#091017"}
+  temple:{name:"Древний храм",icon:"🏛",floor:"#d8c99d",floor2:"#b5a576",wall:"#53634b",wall2:"#202f29",accent:"#e6a633",detail:"#71864e",dark:"#131d19"},
+  dungeon:{name:"Заброшенное подземелье",icon:"🔥",floor:"#737a7f",floor2:"#4c5358",wall:"#2d3338",wall2:"#10161a",accent:"#ed8c31",detail:"#695d4c",dark:"#0b1013"},
+  jungle:{name:"Джунгли",icon:"🌿",floor:"#c9bd84",floor2:"#9d945a",wall:"#35623b",wall2:"#142d1c",accent:"#e7bd42",detail:"#568745",dark:"#0c1b12"},
+  space:{name:"Космостанция",icon:"🚀",floor:"#89959d",floor2:"#5b6871",wall:"#293640",wall2:"#0e161d",accent:"#45d7ff",detail:"#687d8a",dark:"#091017"}
 };
 const forms=[1,2,4,8,3,6,12,9,5,10,7,11,13,14,15];
 const formNames={1:"N",2:"E",4:"S",8:"W",3:"NE",6:"ES",12:"SW",9:"WN",5:"NS",10:"EW",7:"NES",11:"NEW",13:"NSW",14:"ESW",15:"NESW"};
+
 let theme="temple", grid=[], meta={}, zoom=1, library=[], selectedMask=15;
+let mode="gen", selectedTile=null, editHistory=[], historyIndex=-1;
+let pinnedTiles=new Set(), tileOverrides=new Map();
+
 const $=id=>document.getElementById(id);
 const gridSize=$("gridSize"),tileSize=$("tileSize"),loops=$("loops"),decor=$("decor"),seed=$("seed"),map=$("map");
 
@@ -92,75 +157,229 @@ function shuffle(a,r){for(let i=a.length-1;i>0;i--){let j=r()*(i+1)|0;[a[i],a[j]
 function E(m){return{N:!!(m&1),E:!!(m&2),S:!!(m&4),W:!!(m&8)}}
 function deg(m){return ((m&1)>0)+((m&2)>0)+((m&4)>0)+((m&8)>0)}
 function rr(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);c.fill()}
+
 function graph(n,s,p){
- let r=rng(s), parent=Array.from({length:n*n},(_,i)=>i),rank=Array(n*n).fill(0), all=[],chosen=[];
- const find=x=>{while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x]}return x};
- const union=(a,b)=>{a=find(a);b=find(b);if(a===b)return false;if(rank[a]<rank[b])[a,b]=[b,a];parent[b]=a;if(rank[a]===rank[b])rank[a]++;return true};
- for(let y=0;y<n;y++)for(let x=0;x<n;x++){let a=y*n+x;if(x<n-1)all.push([a,a+1,2]);if(y<n-1)all.push([a,a+n,4])}
- shuffle(all,r);for(let e of all)if(union(e[0],e[1]))chosen.push(e);
- for(let e of all)if(r()<p/100)chosen.push(e);
- let masks=Array(n*n).fill(0);for(let [a,b,d] of chosen){masks[a]|=d;masks[b]|=(d===2?8:1)}
- return{masks,edges:chosen.length};
+  let r=rng(s), parent=Array.from({length:n*n},(_,i)=>i),rank=Array(n*n).fill(0), all=[],chosen=[];
+  const find=x=>{while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x]}return x};
+  const union=(a,b)=>{a=find(a);b=find(b);if(a===b)return false;if(rank[a]<rank[b])[a,b]=[b,a];parent[b]=a;if(rank[a]===rank[b])rank[a]++;return true};
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){let a=y*n+x;if(x<n-1)all.push([a,a+1,2]);if(y<n-1)all.push([a,a+n,4])}
+  shuffle(all,r);for(let e of all)if(union(e[0],e[1]))chosen.push(e);
+  for(let e of all)if(r()<p/100)chosen.push(e);
+  let masks=Array(n*n).fill(0);for(let [a,b,d] of chosen){masks[a]|=d;masks[b]|=(d===2?8:1)}
+  return{masks,edges:chosen.length};
 }
+
 function decorObj(c,x,y,s,t,r,k){
- c.save();c.translate(x,y);let q=s*.07;
- if(k==="temple"){c.fillStyle=t.detail;rr(c,-q,-q*.5,q*2,q,2);c.fillStyle=t.accent;c.beginPath();c.arc(0,-q*1.1,q*.5,0,7);c.fill();c.fillStyle="#263728";c.fillRect(-q*.7,q*.25,q*1.4,q*.25)}
- if(k==="dungeon"){c.fillStyle=t.detail;rr(c,-q,-q*.7,q*2,q*1.4,2);c.strokeStyle="#171b1e";c.strokeRect(-q*.7,-q*.45,q*1.4,q*.9);c.fillStyle=t.accent;c.beginPath();c.arc(q*1.1,-q*.8,q*.4,0,7);c.fill()}
- if(k==="jungle"){c.fillStyle=t.detail;c.beginPath();c.arc(0,0,q*1.4,0,7);c.fill();c.fillStyle="#74a84f";c.beginPath();c.ellipse(q*.6,-q*.5,q*.95,q*.35,-.6,0,7);c.fill();c.fillStyle="#df829f";c.beginPath();c.arc(-q*.4,-q*.6,q*.25,0,7);c.fill()}
- if(k==="space"){c.fillStyle=t.detail;rr(c,-q,-q*.7,q*2,q*1.4,2);c.fillStyle=t.accent;c.fillRect(-q*.55,-q*.25,q*1.1,q*.5);c.fillStyle="#d2fbff";c.fillRect(-q*.3,-q*.12,q*.6,q*.12)}
- c.restore()
+  c.save();c.translate(x,y);let q=s*.07;
+  if(k==="temple"){c.fillStyle=t.detail;rr(c,-q,-q*.5,q*2,q,2);c.fillStyle=t.accent;c.beginPath();c.arc(0,-q*1.1,q*.5,0,7);c.fill();c.fillStyle="#263728";c.fillRect(-q*.7,q*.25,q*1.4,q*.25)}
+  if(k==="dungeon"){c.fillStyle=t.detail;rr(c,-q,-q*.7,q*2,q*1.4,2);c.strokeStyle="#171b1e";c.strokeRect(-q*.7,-q*.45,q*1.4,q*.9);c.fillStyle=t.accent;c.beginPath();c.arc(q*1.1,-q*.8,q*.4,0,7);c.fill()}
+  if(k==="jungle"){c.fillStyle=t.detail;c.beginPath();c.arc(0,0,q*1.4,0,7);c.fill();c.fillStyle="#74a84f";c.beginPath();c.ellipse(q*.6,-q*.5,q*.95,q*.35,-.6,0,7);c.fill();c.fillStyle="#df829f";c.beginPath();c.ellipse(-q*.5,-q*.4,q*.7,q*.4,.4,0,7);c.fill()}
+  if(k==="space"){c.fillStyle=t.detail;rr(c,-q,-q*.7,q*2,q*1.4,2);c.fillStyle=t.accent;c.fillRect(-q*.55,-q*.25,q*1.1,q*.5);c.fillStyle="#d2fbff";c.fillRect(-q*.3,-q*.12,q*.6,q*.12)}
+  c.restore()
 }
-function tile(c,x,y,S,m,k,s,detail=true){
- let t=T[k],r=rng(s),e=E(m),cx=x+S/2,cy=y+S/2,p=S*.38;
- c.fillStyle=t.wall2;c.fillRect(x,y,S,S);c.fillStyle=t.wall;c.fillRect(x+3,y+3,S-6,S-6);
- if(m){c.fillStyle=t.floor;c.beginPath();c.rect(cx-p/2,cy-p/2,p,p);if(e.N)c.rect(cx-p/2,y,p,S/2+p/2);if(e.E)c.rect(cx-p/2,cy-p/2,S/2+p/2,p);if(e.S)c.rect(cx-p/2,cy,p,S/2+p/2);if(e.W)c.rect(x,cy-p/2,S/2+p/2,p);c.fill()}
- c.save();c.globalAlpha=.22;c.strokeStyle=t.floor2;c.lineWidth=1;for(let i=0;i<12;i++){let yy=y+7+r()*S;c.beginPath();c.moveTo(x+5,yy);c.lineTo(x+S-5,yy+(r()-.5)*4);c.stroke()}c.restore();
- if(detail && m){let count=Math.round(2+r()*4),density=+$("decor").value/100, placed=0;for(let i=0;i<18&&placed<count;i++){let px=x+7+r()*(S-14),py=y+7+r()*(S-14);if(r()>density)continue;if(Math.abs(px-cx)<p*.62&&Math.abs(py-cy)<p*.62)continue;decorObj(c,px,py,S,t,r,k);placed++}}
- c.strokeStyle=t.wall2;c.lineWidth=5;c.strokeRect(x+3,y+3,S-6,S-6);
- c.save();c.globalAlpha=.16;c.strokeStyle=t.floor2;c.setLineDash([3,5]);c.lineWidth=2;if(e.N||e.S){c.beginPath();c.moveTo(cx,y);c.lineTo(cx,y+S);c.stroke()}if(e.E||e.W){c.beginPath();c.moveTo(x,cy);c.lineTo(x+S,cy);c.stroke()}c.restore()
+
+function tile(c,x,y,S,m,k,s,detail=true,overrides=null){
+  let t=Object.assign({},T[k]);
+  if(overrides){if(overrides.floor)t.floor=overrides.floor;if(overrides.wall)t.wall=overrides.wall}
+  let r=rng(s),e=E(m),cx=x+S/2,cy=y+S/2,p=S*.38;
+  c.fillStyle=t.wall2;c.fillRect(x,y,S,S);c.fillStyle=t.wall;c.fillRect(x+3,y+3,S-6,S-6);
+  if(m){c.fillStyle=t.floor;c.beginPath();c.rect(cx-p/2,cy-p/2,p,p);if(e.N)c.rect(cx-p/2,y,p,S/2+p/2);if(e.E)c.rect(cx-p/2,cy-p/2,S/2+p/2,p);if(e.S)c.rect(cx-p/2,cy,p,S/2+p/2);if(e.W)c.rect(x,cy-p/2,S/2+p/2,p);c.fill()}
+  c.save();c.globalAlpha=.22;c.strokeStyle=t.floor2;c.lineWidth=1;for(let i=0;i<12;i++){let yy=y+7+r()*S;c.beginPath();c.moveTo(x+5,yy);c.lineTo(x+S-5,yy+(r()-.5)*4);c.stroke()}c.restore();
+  if(detail && m){let count=Math.round(2+r()*4),density=+$("decor").value/100, placed=0;for(let i=0;i<18&&placed<count;i++){let px=x+7+r()*(S-14),py=y+7+r()*(S-14);if(r()>density)continue;if(Math.hypot(px-(cx),py-(cy))<p/2+8)continue;decorObj(c,px,py,S,t,r,k);placed++}}
+  c.strokeStyle=t.wall2;c.lineWidth=5;c.strokeRect(x+3,y+3,S-6,S-6);
+  c.save();c.globalAlpha=.16;c.strokeStyle=t.floor2;c.setLineDash([3,5]);c.lineWidth=2;if(e.N||e.S){c.beginPath();c.moveTo(cx,y);c.lineTo(cx,y+S);c.stroke()}if(e.E||e.W){c.beginPath();c.moveTo(x,cy);c.lineTo(x+S,cy);c.stroke()}c.restore();
 }
+
 function render(){
- let n=+gridSize.value,S=+tileSize.value,c=map.getContext("2d");map.width=n*S;map.height=n*S;
- c.fillStyle=T[theme].dark;c.fillRect(0,0,map.width,map.height);
- grid.forEach((m,i)=>tile(c,i%n*S,Math.floor(i/n)*S,S,m,theme,meta.seed+"|"+i,true));
- map.style.width=map.width*zoom+"px";map.style.height=map.height*zoom+"px";
- $("stats").innerHTML=`<div class="kv"><span>Тема</span><strong>${T[theme].icon} ${T[theme].name}</strong></div><div class="kv"><span>Поле</span><strong>${n}×${n}</strong></div><div class="kv"><span>Тайл</span><strong>${S}px</strong></div><div class="kv"><span>Seed</span><strong>${meta.seed}</strong></div><div class="kv"><span>Связей</span><strong>${meta.edges}</strong></div><div class="kv"><span>Средняя степень</span><strong>${meta.avg}</strong></div>`;
- validate();
+  let n=+gridSize.value,S=+tileSize.value,c=map.getContext("2d");map.width=n*S;map.height=n*S;
+  $("gridlines").style.setProperty("--gs",S+"px");
+  c.fillStyle=T[theme].dark;c.fillRect(0,0,map.width,map.height);
+  grid.forEach((m,i)=>{
+    let overrides=tileOverrides.get(i);
+    tile(c,i%n*S,Math.floor(i/n)*S,S,m,theme,meta.seed+"|"+i,true,overrides);
+    if(pinnedTiles.has(i)){c.save();c.strokeStyle="#f3b84b";c.lineWidth=3;c.strokeRect(i%n*S+5,Math.floor(i/n)*S+5,S-10,S-10);c.restore()}
+    if(selectedTile===i && mode==="edit"){c.save();c.strokeStyle="#45d7ff";c.lineWidth=4;c.strokeRect(i%n*S,Math.floor(i/n)*S,S,S);c.restore()}
+  });
+  map.style.width=map.width*zoom+"px";map.style.height=map.height*zoom+"px";
+  $("stats").innerHTML=`<div class="kv"><span>Тема</span><strong>${T[theme].icon} ${T[theme].name}</strong></div><div class="kv"><span>Поле</span><strong>${n}×${n}</strong></div><div class="kv"><span>Тайлы</span><strong>${grid.length}</strong></div><div class="kv"><span>Зафиксировано</span><strong>${pinnedTiles.size}</strong></div>`;
+  validate();
 }
+
 function validate(){
- let n=+gridSize.value,ok=true,bad=0;for(let y=0;y<n;y++)for(let x=0;x<n;x++){let e=E(grid[y*n+x]);if(x<n-1&&e.E!==E(grid[y*n+x+1]).W){ok=false;bad++}if(y<n-1&&e.S!==E(grid[(y+1)*n+x]).N){ok=false;bad++}}
- let seen=new Set([0]),q=[0];while(q.length){let id=q.shift(),e=E(grid[id]),x=id%n,y=id/n,ns=[];if(e.N)ns.push(id-n);if(e.E)ns.push(id+1);if(e.S)ns.push(id+n);if(e.W)ns.push(id-1);for(let v of ns)if(v>=0&&v<n*n&&!seen.has(v)){seen.add(v);q.push(v)}}
- let all=seen.size===n*n;ok=ok&&all;$("validation").innerHTML=ok?`<div class="ok"><b>✓ VALID</b></div><div class="hint">Все ${n*n} клеток достижимы. Стыков: 0 ошибок.</div>`:`<div class="bad"><b>✕ INVALID</b></div><div class="hint">${seen.size}/${n*n} доступны · ${bad} ошибок стыков</div>`;$("health").textContent=ok?"● CONNECTED":"● ERROR";$("health").style.color=ok?"#9fe27e":"#f16d75"
+  let n=+gridSize.value,ok=true,bad=0;for(let y=0;y<n;y++)for(let x=0;x<n;x++){let e=E(grid[y*n+x]);if(x<n-1&&e.E!==E(grid[y*n+x+1]).W){ok=false;bad++}if(y<n-1&&e.S!==E(grid[(y+1)*n+x]).N){ok=false;bad++}}
+  let seen=new Set([0]),q=[0];while(q.length){let id=q.shift(),e=E(grid[id]),x=id%n,y=id/n,ns=[];if(e.N)ns.push(id-n);if(e.E)ns.push(id+1);if(e.S)ns.push(id+n);if(e.W)ns.push(id-1);for(let v of ns)if(v>=0&&v<n*n&&!seen.has(v)){seen.add(v);q.push(v)}}
+  let all=seen.size===n*n;ok=ok&&all;$("validation").innerHTML=ok?`<div class="ok"><b>✓ VALID</b></div><div class="hint">Все ${n*n} клеток достижимы. Стыков: 0 ошибок</div>`:`<div class="bad"><b>✗ ISSUES</b></div><div class="hint">Стыков ошибок: ${bad}. Недостижимые: ${n*n-seen.size}</div>`;
 }
+
 function generate(){
- let n=+gridSize.value,s=seed.value||"0",g=graph(n,s,+loops.value);grid=g.masks;let avg=grid.reduce((a,m)=>a+deg(m),0)/grid.length;meta={version:"2.0",theme,seed:s,gridSize:n,tileSize:+tileSize.value,edges:g.edges,avg:avg.toFixed(2),decor:+decor.value};$("status").textContent=`${n*n} тайлов · ${T[theme].name}`;render();buildLibrary()
+  if(pinnedTiles.size>0){
+    let n=+gridSize.value,s=seed.value||"0",g=graph(n,s,+loops.value);
+    for(let i of pinnedTiles){g.masks[i]=grid[i]}
+    grid=g.masks;
+  }else{
+    let n=+gridSize.value,s=seed.value||"0",g=graph(n,s,+loops.value);grid=g.masks;
+  }
+  let avg=grid.reduce((a,m)=>a+deg(m),0)/grid.length;
+  meta={version:"2.1",theme,seed:seed.value||"0",gridSize:+gridSize.value,tileSize:+tileSize.value,loops:+loops.value,decor:+decor.value,avgDeg:avg.toFixed(2),edges:g.edges};
+  saveHistory();
+  render();
 }
+
 function buildLibrary(){
- library=[];$("library").innerHTML="";let S=+tileSize.value;
- forms.forEach(m=>{for(let v=0;v<4;v++){let c=document.createElement("canvas");c.width=c.height=S;tile(c.getContext("2d"),0,0,S,m,theme,`lib|${theme}|${m}|${v}`,true);let d=document.createElement("div");d.className="lib";d.title=`${formNames[m]} · variant ${v+1}`;d.appendChild(c);$("library").appendChild(d);library.push({mask:m,variant:v,canvas:c})}});selectedMask=15
+  library=[];$("library").innerHTML="";let S=+tileSize.value;
+  forms.forEach(m=>{for(let v=0;v<4;v++){let c=document.createElement("canvas");c.width=c.height=S;tile(c.getContext("2d"),0,0,S,m,theme,`lib|${theme}|${m}|${v}`,true);let d=document.createElement("div");d.className="lib";d.appendChild(c);d.onclick=()=>{document.querySelectorAll(".lib").forEach(x=>x.classList.remove("selected"));d.classList.add("selected");selectedMask=m};library.push(c);$("library").appendChild(d)}})
 }
+
 function download(b,n){let a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),800)}
+
 function exportData(){
- let S=+tileSize.value,n=+gridSize.value;
- if($("png").checked)map.toBlob(b=>download(b,`maze_${theme}_${meta.seed}.png`));
- if($("json").checked)download(new Blob([JSON.stringify({version:"2.0",theme,seed:meta.seed,gridSize:n,tileSize:S,masks:grid},null,2)],{type:"application/json"}),`maze_${theme}_${meta.seed}.json`);
- if($("themeJson").checked)download(new Blob([JSON.stringify({id:theme,name:T[theme].name,palette:T[theme],rules:{walkableWidth:.76,decorationSafeMargin:8,variants:4}},null,2)],{type:"application/json"}),`theme_${theme}.json`);
- if($("sheet").checked){let cols=5,rows=Math.ceil(library.length/cols),c=document.createElement("canvas");c.width=cols*S;c.height=rows*S;let x=c.getContext("2d");x.fillStyle=T[theme].dark;x.fillRect(0,0,c.width,c.height);library.forEach((a,i)=>x.drawImage(a.canvas,i%cols*S,Math.floor(i/cols)*S));c.toBlob(b=>download(b,`tiles_${theme}_${S}px.png`))}
- $("status").textContent="Экспорт завершён"
+  let S=+tileSize.value,n=+gridSize.value;
+  if($("png").checked)map.toBlob(b=>download(b,`maze_${theme}_${meta.seed}.png`));
+  if($("json").checked)download(new Blob([JSON.stringify({version:"2.1",theme,seed:meta.seed,gridSize:n,tileSize:S,masks:grid,pinned:Array.from(pinnedTiles),overrides:Array.from(tileOverrides.entries())},null,2)],{type:"application/json"}),`maze_${theme}_${meta.seed}.json`);
+  if($("themeJson").checked)download(new Blob([JSON.stringify({id:theme,name:T[theme].name,palette:T[theme],rules:{walkableWidth:.76,decorationSafeMargin:8,variants:4}},null,2)],{type:"application/json"}),`theme_${theme}.json`);
+  if($("sheet").checked){let cols=5,rows=Math.ceil(library.length/cols),c=document.createElement("canvas");c.width=cols*S;c.height=rows*S;let x=c.getContext("2d");x.fillStyle=T[theme].dark;x.fillRect(0,0,c.width,c.height);library.forEach((cv,i)=>x.drawImage(cv,i%cols*S,Math.floor(i/cols)*S));c.toBlob(b=>download(b,`spritesheet_${theme}.png`))}
+  $("status").textContent="Экспорт завершён"
 }
-function project(){download(new Blob([JSON.stringify({project:"maze-tile-generator",version:"2.0",settings:{theme,gridSize:+gridSize.value,tileSize:+tileSize.value,loops:+loops.value,decor:+decor.value,seed:seed.value},grid,meta},null,2)],{type:"application/json"}),`maze_project_${meta.seed}.json`)}
+
+function project(){download(new Blob([JSON.stringify({project:"maze-tile-generator",version:"2.1",settings:{theme,gridSize:+gridSize.value,tileSize:+tileSize.value,loops:+loops.value,decor:+decor.value,seed:seed.value},grid:grid,pinned:Array.from(pinnedTiles),overrides:Array.from(tileOverrides.entries())},null,2)],{type:"application/json"}),`project_${Date.now()}.json`)}
+
+function exportTilePng(){
+  if(selectedTile===null)return;
+  let S=+tileSize.value,c=document.createElement("canvas");c.width=c.height=S;
+  let n=+gridSize.value,m=grid[selectedTile],i=selectedTile%n;
+  let overrides=tileOverrides.get(selectedTile);
+  tile(c.getContext("2d"),0,0,S,m,theme,meta.seed+"|"+selectedTile,true,overrides);
+  c.toBlob(b=>download(b,`tile_${selectedTile}_${theme}.png`))
+}
+
+function exportTileSvg(){
+  if(selectedTile===null)return;
+  let S=+tileSize.value,n=+gridSize.value,m=grid[selectedTile];
+  let e=E(m),cy=S/2,p=S*.38;
+  let t=Object.assign({},T[theme]),overrides=tileOverrides.get(selectedTile);
+  if(overrides){if(overrides.floor)t.floor=overrides.floor;if(overrides.wall)t.wall=overrides.wall}
+  
+  let svg=`<svg width="${S}" height="${S}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${S}" height="${S}" fill="${t.wall2}"/>
+  <rect x="3" y="3" width="${S-6}" height="${S-6}" fill="${t.wall}"/>`;
+  
+  if(m){svg+=`<path fill="${t.floor}" d="M ${cy-p/2} ${cy-p/2} L ${cy+p/2} ${cy-p/2} L ${cy+p/2} ${cy+p/2} L ${cy-p/2} ${cy+p/2} Z`;
+    if(e.N)svg+=` M ${cy-p/2} 0 L ${cy+p/2} 0 L ${cy+p/2} ${cy+p/2} L ${cy-p/2} ${cy+p/2} Z`;
+    if(e.E)svg+=` M ${cy} ${cy-p/2} L ${S} ${cy-p/2} L ${S} ${cy+p/2} L ${cy} ${cy+p/2} Z`;
+    if(e.S)svg+=` M ${cy-p/2} ${cy} L ${cy+p/2} ${cy} L ${cy+p/2} ${S} L ${cy-p/2} ${S} Z`;
+    if(e.W)svg+=` M 0 ${cy-p/2} L ${cy} ${cy-p/2} L ${cy} ${cy+p/2} L 0 ${cy+p/2} Z`;
+    svg+=`" />`;
+  }
+  
+  svg+=`<rect x="3" y="3" width="${S-6}" height="${S-6}" stroke="${t.wall2}" stroke-width="5" fill="none"/>`;
+  svg+=`</svg>`;
+  
+  download(new Blob([svg],{type:"image/svg+xml"}),`tile_${selectedTile}_${theme}.svg`)
+}
+
+function selectTile(idx){
+  selectedTile=idx;
+  let n=+gridSize.value,m=grid[idx],e=E(m);
+  $("editInfo").innerHTML=`<b>Тайл #${idx}</b> (${idx%n},${Math.floor(idx/n)})<br/>Маска: ${m} (${formNames[m] || 'NONE'})<br/>Зафиксирован: ${pinnedTiles.has(idx)?"Да":"Нет"}`;
+  $("editorControls").style.display="block";
+  
+  $("sockN").classList.toggle("open",e.N);$("sockE").classList.toggle("open",e.E);$("sockS").classList.toggle("open",e.S);$("sockW").classList.toggle("open",e.W);
+  $("pinTile").checked=pinnedTiles.has(idx);
+  
+  let overrides=tileOverrides.get(idx);
+  $("floorColor").value=overrides?.floor||T[theme].floor;
+  $("wallColor").value=overrides?.wall||T[theme].wall;
+  
+  render();
+}
+
+function applyTileEdits(){
+  if(selectedTile===null)return;
+  let e={N:$("sockN").classList.contains("open"),E:$("sockE").classList.contains("open"),S:$("sockS").classList.contains("open"),W:$("sockW").classList.contains("open")};
+  let newMask=(e.N?1:0)|(e.E?2:0)|(e.S?4:0)|(e.W?8:0);
+  grid[selectedTile]=newMask;
+  
+  if($("pinTile").checked){pinnedTiles.add(selectedTile)}else{pinnedTiles.delete(selectedTile)}
+  
+  let floorCol=$("floorColor").value,wallCol=$("wallColor").value;
+  if(floorCol!==T[theme].floor||wallCol!==T[theme].wall){tileOverrides.set(selectedTile,{floor:floorCol,wall:wallCol})}else{tileOverrides.delete(selectedTile)}
+  
+  saveHistory();
+  render();
+  $("status").textContent="Тайл обновлён";
+}
+
+function resetTile(){
+  if(selectedTile===null)return;
+  let n=+gridSize.value,s=seed.value||"0",g=graph(n,s,+loops.value);
+  grid[selectedTile]=g.masks[selectedTile];
+  tileOverrides.delete(selectedTile);
+  pinnedTiles.delete(selectedTile);
+  selectTile(selectedTile);
+  saveHistory();
+}
+
+function saveHistory(){editHistory=editHistory.slice(0,historyIndex+1);editHistory.push({grid:grid.slice(),pinned:new Set(pinnedTiles),overrides:new Map(tileOverrides)});historyIndex=editHistory.length-1;updateHistoryButtons()}
+function undo(){if(historyIndex>0){historyIndex--;let h=editHistory[historyIndex];grid=h.grid.slice();pinnedTiles=new Set(h.pinned);tileOverrides=new Map(h.overrides);render();updateHistoryButtons()}}
+function redo(){if(historyIndex<editHistory.length-1){historyIndex++;let h=editHistory[historyIndex];grid=h.grid.slice();pinnedTiles=new Set(h.pinned);tileOverrides=new Map(h.overrides);render();updateHistoryButtons()}}
+function updateHistoryButtons(){$("undoBtn").disabled=historyIndex<=0;$("redoBtn").disabled=historyIndex>=editHistory.length-1}
+
+function onMapClick(e){
+  if(mode!=="edit")return;
+  let rect=map.getBoundingClientRect(),x=(e.clientX-rect.left)/zoom,y=(e.clientY-rect.top)/zoom;
+  let S=+tileSize.value,n=+gridSize.value;
+  let col=Math.floor(x/S),row=Math.floor(y/S);
+  if(col>=0&&col<n&&row>=0&&row<n){selectTile(row*n+col)}
+}
+
 function setup(){
- Object.entries(T).forEach(([k,t])=>{let d=document.createElement("div");d.className="theme"+(k===theme?" active":"");d.onclick=()=>{theme=k;document.querySelectorAll(".theme").forEach(x=>x.classList.remove("active"));d.classList.add("active");updatePalette();generate()};let s=document.createElement("div");s.className="sw";s.style.background=`linear-gradient(135deg,${t.wall2},${t.floor},${t.detail})`;d.append(s);d.insertAdjacentHTML("beforeend",`<b>${t.icon} ${t.name}</b><small>${k}</small>`);$("themes").appendChild(d)});
- forms.forEach(m=>{let d=document.createElement("div");d.className="type"+(m===selectedMask?" selected":"");let c=document.createElement("canvas");c.width=c.height=64;tile(c.getContext("2d"),0,0,64,m,theme,"type"+m,false);d.append(c,d.appendChild(document.createTextNode(formNames[m])));d.onclick=()=>{selectedMask=m;document.querySelectorAll(".type").forEach(x=>x.classList.remove("selected"));d.classList.add("selected")};$("types").appendChild(d)});
- updatePalette();
- $("loops").oninput=()=>$("loopV").textContent=loops.value+"%";$("decor").oninput=()=>{$("decorV").textContent=decor.value+"%";render();buildLibrary()};
- $("generate").onclick=generate;$("regen").onclick=generate;$("dice").onclick=()=>{seed.value=Math.floor(Math.random()*999999);generate()};$("newSeed").onclick=()=>{seed.value=Math.floor(Math.random()*9999999);generate()};$("clear").onclick=()=>{grid=[];map.getContext("2d").clearRect(0,0,map.width,map.height);$("status").textContent="Поле очищено"};
- $("export").onclick=exportData;$("project").onclick=project;
- $("plus").onclick=()=>{zoom=Math.min(2,zoom*1.2);render()};$("minus").onclick=()=>{zoom=Math.max(.35,zoom/1.2);render()};$("fit").onclick=()=>{zoom=1;render()};$("toggleGrid").onclick=()=>{$("gridlines").hidden=!$("gridlines").hidden};
- [gridSize,tileSize].forEach(x=>x.onchange=()=>generate());
- generate();
+  Object.entries(T).forEach(([k,t])=>{let d=document.createElement("div");d.className="theme"+(k===theme?" active":"");d.onclick=()=>{theme=k;document.querySelectorAll(".theme").forEach(x=>x.classList.remove("active"));d.classList.add("active");generate();buildLibrary()};d.innerHTML=`<b>${t.icon}</b><span>${t.name}</span>`;$("themes").appendChild(d)});
+  
+  forms.forEach(m=>{let d=document.createElement("div");d.className="type"+(m===selectedMask?" selected":"");let c=document.createElement("canvas");c.width=c.height=64;tile(c.getContext("2d"),0,0,64,m,theme,`lib|${theme}|${m}`,true);d.appendChild(c);d.onclick=()=>{document.querySelectorAll(".type").forEach(x=>x.classList.remove("selected"));d.classList.add("selected");selectedMask=m};$("types").appendChild(d)});
+  
+  updatePalette();
+  
+  $("loops").oninput=()=>$("loopV").textContent=loops.value+"%";
+  $("decor").oninput=()=>{$("decorV").textContent=decor.value+"%";render();buildLibrary()};
+  $("generate").onclick=generate;
+  $("regen").onclick=generate;
+  $("dice").onclick=()=>{seed.value=Math.floor(Math.random()*999999);generate()};
+  $("newSeed").onclick=()=>{seed.value=Math.floor(Math.random()*999999);generate()};
+  $("export").onclick=exportData;
+  $("project").onclick=project;
+  
+  $("plus").onclick=()=>{zoom=Math.min(2,zoom*1.2);render()};
+  $("minus").onclick=()=>{zoom=Math.max(.35,zoom/1.2);render()};
+  $("fit").onclick=()=>{zoom=1;render()};
+  $("toggleGrid").onclick=()=>{$("gridlines").hidden=!$("gridlines").hidden};
+  
+  [gridSize,tileSize].forEach(x=>x.onchange=()=>generate());
+  
+  $("modeGen").onclick=()=>{mode="gen";$("modeGen").classList.add("active");$("modeEdit").classList.remove("active");$("genPanel").style.display="block";$("editPanel").style.display="none";selectedTile=null;render()};
+  $("modeEdit").onclick=()=>{mode="edit";$("modeEdit").classList.add("active");$("modeGen").classList.remove("active");$("genPanel").style.display="none";$("editPanel").style.display="block";$("libSection").style.display="none";render()};
+  
+  map.addEventListener("click",onMapClick);
+  
+  $("sockN").onclick=()=>$("sockN").classList.toggle("open");
+  $("sockE").onclick=()=>$("sockE").classList.toggle("open");
+  $("sockS").onclick=()=>$("sockS").classList.toggle("open");
+  $("sockW").onclick=()=>$("sockW").classList.toggle("open");
+  
+  $("applyTile").onclick=applyTileEdits;
+  $("resetTile").onclick=resetTile;
+  $("exportTilePng").onclick=exportTilePng;
+  $("exportTileSvg").onclick=exportTileSvg;
+  
+  $("undoBtn").onclick=undo;
+  $("redoBtn").onclick=redo;
+  
+  generate();
+  buildLibrary();
+  saveHistory();
 }
+
 function updatePalette(){let t=T[theme];$("palette").innerHTML=[t.wall2,t.wall,t.floor,t.floor2,t.detail,t.accent].map(x=>`<div class="chip" style="background:${x}" title="${x}"></div>`).join("")}
+
 setup();
 </script>
 </body>
